@@ -1,0 +1,5 @@
+1. Download Python & Add to environment variables PATH (https://www.python.org/downloads/release/python-3115/)
+2. Edit install.bat with notepad, adjust line 2 to "cd <path>\<to>\<AI>\<directory>". Example: cd C:\Users\gundu\Documents\gundu-ai\gundu-ai
+3. run install.bat
+4. Edit gundu.bat with notepad, adjust line 2 to "cd <path>\<to>\<AI>\<directory>". Example: cd C:\Users\gundu\Documents\gundu-ai\gundu-ai
+5. run gundu.bat

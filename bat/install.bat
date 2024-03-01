@@ -1,5 +1,6 @@
 @echo off
 cd  C:\Users\gundu\Documents\gundu-ai\gundu-ai
+py -m venv .venv
 call .venv\Scripts\activate
-python main.py
+pip install -r requirements.txt
 pause
