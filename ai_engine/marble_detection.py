@@ -67,7 +67,7 @@ class MarbleDetection:
         return (color, colors, probs)
 
     def predict(self, img, publish):
-        results = self.model.predict(img, conf = float(os.getenv('CONF')), iou = float(os.getenv('IOU')))
+        results = self.model.predict(img, conf = float(os.getenv('CONF')), iou = float(os.getenv('IOU')), agnostic_nms=True)
         names = self.model.names
         rank = []
         for r in results:
