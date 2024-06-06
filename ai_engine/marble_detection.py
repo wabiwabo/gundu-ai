@@ -29,7 +29,7 @@ dotenv.load_dotenv()
 
 class MarbleDetection:
     def __init__(self):
-        self.model = YOLO(os.getenv('BASE_PATH') + '/models/best-6-class-tuned.pt')
+        self.model = YOLO(os.getenv('BASE_PATH') + '/models/best-6-class-tuned_openvino_model/')
         self.source = os.getenv('SOURCE_CAM')
         try:
             self.source = int(self.source)
