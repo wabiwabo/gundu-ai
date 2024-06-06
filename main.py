@@ -79,7 +79,8 @@ while True:
             cv2.imshow(os.getenv('WINDOW_NAME'), results)
             k = cv2.waitKey(1)
 
-cv2.destroyAllWindows()
+if not isinstance(source, str):
+    cv2.destroyAllWindows()
 cap.release()
 if isinstance(source, str):
     out.release()

@@ -29,6 +29,7 @@ dotenv.load_dotenv()
 
 class MarbleDetection:
     def __init__(self):
+        # self.model = YOLO(os.getenv('BASE_PATH') + '/models/best-6-class-tuned.pt')
         self.model = YOLO(os.getenv('BASE_PATH') + '/models/best-6-class-tuned_openvino_model/')
         self.source = os.getenv('SOURCE_CAM')
         try:
@@ -79,14 +80,17 @@ class MarbleDetection:
         return (color, colors, probs)
 
     def predict(self, img, publish):
-        results = self.model.predict(img, conf = float(os.getenv('CONF')), iou = float(os.getenv('IOU')), agnostic_nms=True)
-        names = self.model.names
+        # results = self.model.predict(img, conf = float(os.getenv('CONF')), iou = float(os.getenv('IOU')), agnostic_nms=True)
+        results = self.model(img, conf = float(os.getenv('CONF')), iou = float(os.getenv('IOU')), agnostic_nms=True)
+        # names = self.model.names
+        names = {0: 'marbles-black', 1: 'marbles-blue', 2: 'marbles-green', 3: 'marbles-red', 4: 'marbles-white', 5: 'marbles-yellow'}
         rank = []
         for r in results:
             annotator = Annotator(img)
             boxes = r.boxes
             confs = r.boxes.conf
             classes = r.boxes.cls
+
             for box, conf, cls in zip(boxes, confs, classes):
                 b = box.xyxy[0]  # get box coordinates in (left, top, right, bottom) format
                 bbox = b.cpu().numpy()
