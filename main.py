@@ -4,18 +4,29 @@ import cv2
 from ai_engine.marble_detection import MarbleDetection
 from ai_engine.helper import enhance_image, image_resize
 import numpy as np
-from tensorflow.random import set_seed
 import logging
+from logging.handlers import RotatingFileHandler
 
-logging.basicConfig(filename='error.log', level=logging.DEBUG, 
-                    format='%(asctime)s %(levelname)s %(name)s %(message)s')
-logger=logging.getLogger(__name__)
+# Create a logger
+logger = logging.getLogger("my_logger")
+logger.setLevel(logging.DEBUG)
+
+# Create a handler that writes log messages to a file with a limit on the file size and backup count
+handler = RotatingFileHandler("error.log", maxBytes=1024*1024*25, backupCount=3)  # 5MB per file, 3 backups
+handler.setLevel(logging.DEBUG)
+
+# Create a formatter and set it for the handler
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
+# Add the handler to the logger
+logger.addHandler(handler)
+
 
 dotenv.load_dotenv()
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 np.random.seed(345)
-set_seed(3)
 
 marble_detector = MarbleDetection()
 
@@ -59,7 +70,7 @@ while True:
         results = marble_detector.predict(img, flag)
         results = image_resize(results, height=int(os.getenv('OUTPUT_HEIGHT')))
     except Exception as e:
-        logger.error(e)
+        logger.error(e, stack_info=True, exc_info=True)
 
     if results is not None:
         if out is not None:

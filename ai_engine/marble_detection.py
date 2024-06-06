@@ -8,16 +8,28 @@ import cv2
 import time
 import json
 import logging
+from logging.handlers import RotatingFileHandler
 
-logging.basicConfig(filename='error.log', level=logging.DEBUG, 
-                    format='%(asctime)s %(levelname)s %(name)s %(message)s')
-logger=logging.getLogger(__name__)
+# Create a logger
+logger = logging.getLogger("my_logger")
+logger.setLevel(logging.DEBUG)
+
+# Create a handler that writes log messages to a file with a limit on the file size and backup count
+handler = RotatingFileHandler("error.log", maxBytes=1024*1024*25, backupCount=3)  # 5MB per file, 3 backups
+handler.setLevel(logging.DEBUG)
+
+# Create a formatter and set it for the handler
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
+# Add the handler to the logger
+logger.addHandler(handler)
 
 dotenv.load_dotenv()
 
 class MarbleDetection:
     def __init__(self):
-        self.model = YOLO(os.getenv('BASE_PATH') + '/models/best-6-class-tuned.pt')
+        self.model = YOLO(os.getenv('BASE_PATH') + '/models/best-6-class-tuned_openvino_model/')
         self.source = os.getenv('SOURCE_CAM')
         try:
             self.source = int(self.source)
@@ -55,7 +67,7 @@ class MarbleDetection:
             rabbitmq_declare_queue(self.rank_queue_name)
             rabbitmq_declare_queue(self.finish_status_queue_name)
         except Exception as e:
-            logger.error(e)
+            logger.error(e, stack_info=True, exc_info=True)
 
     def predict_color(self, img, bbox):
         array = np.ascontiguousarray(img[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])])
@@ -125,7 +137,7 @@ class MarbleDetection:
                     rabbitmq_publish(rank_message, self.rank_queue_name)
                     rabbitmq_publish(finish_notif, self.finish_status_queue_name)
                 except Exception as e:
-                    logger.error(e)
+                    logger.error(e, stack_info=True, exc_info=True)
 
         x = 50
         y = 100
