@@ -25,17 +25,23 @@ handler.setFormatter(formatter)
 # Add the handler to the logger
 logger.addHandler(handler)
 
-dotenv.load_dotenv()
+dotenv.load_dotenv(override=True)
 
 class MarbleDetection:
     def __init__(self):
-        # self.model = YOLO(os.getenv('BASE_PATH') + '/models/best-6-class-tuned.pt')
-        self.model = YOLO(os.getenv('BASE_PATH') + '/models/best-6-class-tuned_openvino_model/')
+
+        self.model = YOLO(os.getenv('BASE_PATH') + '/models/best-6-class-tuned.pt')
+        if os.getenv('OPENVINO_MODEL') == "0":
+            self.model = YOLO(os.getenv('BASE_PATH') + '/models/best-6-class-tuned.pt')
+        elif os.getenv('OPENVINO_MODEL') == "1":
+            self.model = YOLO(os.getenv('BASE_PATH') + '/models/best-6-class-tuned_openvino_model/')
+
         self.source = os.getenv('SOURCE_CAM')
         try:
             self.source = int(self.source)
         except ValueError:
             self.source = str(self.source)
+
         self.cap = cv2.VideoCapture(self.source)
         self.width  = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -50,6 +56,12 @@ class MarbleDetection:
         self.fontColor = (255, 0, 0)
         self.thickness = 2
         self.lineType  = 1
+
+        self.verbose = True
+        if os.getenv('VERBOSE') == "0":
+            self.verbose = False
+        elif os.getenv('VERBOSE') == "1":
+            self.verbose = True
 
         self.connection = None
         self.channel = None
@@ -80,9 +92,11 @@ class MarbleDetection:
         return (color, colors, probs)
 
     def predict(self, img, publish):
-        # results = self.model.predict(img, conf = float(os.getenv('CONF')), iou = float(os.getenv('IOU')), agnostic_nms=True)
-        results = self.model(img, conf = float(os.getenv('CONF')), iou = float(os.getenv('IOU')), agnostic_nms=True)
-        # names = self.model.names
+        if os.getenv('OPENVINO_MODEL') == "1":
+            results = self.model(img, conf = float(os.getenv('CONF')), iou = float(os.getenv('IOU')), agnostic_nms=True, verbose=self.verbose)
+        else:
+            results = self.model.predict(img, conf = float(os.getenv('CONF')), iou = float(os.getenv('IOU')), agnostic_nms=True, verbose=self.verbose)
+
         names = {0: 'marbles-black', 1: 'marbles-blue', 2: 'marbles-green', 3: 'marbles-red', 4: 'marbles-white', 5: 'marbles-yellow'}
         rank = []
         for r in results:
@@ -135,11 +149,13 @@ class MarbleDetection:
 
         if publish == True:
             if len(marbles) == 0:
-                print("EMPTY")
+                if self.verbose:
+                    print("EMPTY")
             else:
                 try:
                     rabbitmq_publish(rank_message, self.rank_queue_name)
-                    rabbitmq_publish(finish_notif, self.finish_status_queue_name)
+                    if os.getenv('SEND_FINISH_STATUS') != "0":
+                        rabbitmq_publish(finish_notif, self.finish_status_queue_name)
                 except Exception as e:
                     logger.error(e, stack_info=True, exc_info=True)
 
@@ -162,6 +178,10 @@ class MarbleDetection:
         end_point = (int(float(os.getenv('FINISH_LINE_RIGHT')) * img.shape[1]), int(float(os.getenv('FINISH_LINE_BOTTOM')) * img.shape[0]))
         img = cv2.rectangle(img, start_point, end_point, color, thickness)
 
-        print(marbles)
+        if self.verbose:
+            print(marbles)
+        else:
+            if len(marbles) > 0:
+                print(marbles)
 
         return img

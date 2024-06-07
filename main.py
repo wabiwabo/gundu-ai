@@ -23,7 +23,7 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
-dotenv.load_dotenv()
+dotenv.load_dotenv(override=True)
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 np.random.seed(345)
@@ -76,8 +76,9 @@ while True:
         if out is not None:
             out.write(results)
         else:
-            cv2.imshow(os.getenv('WINDOW_NAME'), results)
-            k = cv2.waitKey(1)
+            if os.getenv("SHOW_UI") == "1":
+                cv2.imshow(os.getenv('WINDOW_NAME'), results)
+                k = cv2.waitKey(1)
 
 if not isinstance(source, str):
     cv2.destroyAllWindows()
