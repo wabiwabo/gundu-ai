@@ -30,11 +30,11 @@ dotenv.load_dotenv(override=True)
 class MarbleDetection:
     def __init__(self):
 
-        self.model = YOLO(os.getenv('BASE_PATH') + '/models/best-6-class-tuned.pt')
+        self.model = YOLO(os.getenv('BASE_PATH') + '/models/best-6-class-tuned-seg.pt')
         if os.getenv('OPENVINO_MODEL') == "0":
-            self.model = YOLO(os.getenv('BASE_PATH') + '/models/best-6-class-tuned.pt')
+            self.model = YOLO(os.getenv('BASE_PATH') + '/models/best-6-class-tuned-seg.pt')
         elif os.getenv('OPENVINO_MODEL') == "1":
-            self.model = YOLO(os.getenv('BASE_PATH') + '/models/best-6-class-tuned_openvino_model/')
+            self.model = YOLO(os.getenv('BASE_PATH') + '/models/best-6-class-tuned-seg_openvino_model/')
 
         self.source = os.getenv('SOURCE_CAM')
         try:
@@ -92,12 +92,9 @@ class MarbleDetection:
         return (color, colors, probs)
 
     def predict(self, img, publish):
-        if os.getenv('OPENVINO_MODEL') == "1":
-            results = self.model(img, conf = float(os.getenv('CONF')), iou = float(os.getenv('IOU')), agnostic_nms=True, verbose=self.verbose)
-        else:
-            results = self.model.predict(img, conf = float(os.getenv('CONF')), iou = float(os.getenv('IOU')), agnostic_nms=True, verbose=self.verbose)
+        results = self.model(img, conf = float(os.getenv('CONF')), iou = float(os.getenv('IOU')), agnostic_nms=True, verbose=self.verbose)
 
-        names = {0: 'marbles-black', 1: 'marbles-blue', 2: 'marbles-green', 3: 'marbles-red', 4: 'marbles-white', 5: 'marbles-yellow'}
+        names = {0: 'marble-black', 1: 'marble-blue', 2: 'marble-green', 3: 'marble-red', 4: 'marble-white', 5: 'marble-yellow'}
         rank = []
         for r in results:
             annotator = Annotator(img)
@@ -108,7 +105,9 @@ class MarbleDetection:
             for box, conf, cls in zip(boxes, confs, classes):
                 b = box.xyxy[0]  # get box coordinates in (left, top, right, bottom) format
                 bbox = b.cpu().numpy()
-                name = names[int(cls)][8:].upper()
+                name = names[int(cls)][7:].upper()
+                # name = str(cls)
+
                 if bbox[0] >= self.min_width and bbox[2] <= self.max_width and bbox[1] >= self.min_height and bbox[3] <= self.max_height:
                     if self.orientation == "LEFT" or self.orientation == "RIGHT":
                         rank.append(((int(bbox[0] + bbox[2]) / 2.0), name, bbox, conf))
@@ -183,5 +182,6 @@ class MarbleDetection:
         else:
             if len(marbles) > 0:
                 print(marbles)
-
+        
+        # cv2.imwrite("output.jpg", img)
         return img
